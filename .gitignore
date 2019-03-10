@@ -1,0 +1,10 @@
+#contracts
+/privateCrowdsale
+/publicCrowdsale
+/Airdrop
+
+# misc
+firefox_root
+.idea
+.parentlock
+.DS_Store
