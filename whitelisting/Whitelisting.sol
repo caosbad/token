@@ -1,4 +1,4 @@
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../zeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -20,7 +20,7 @@ contract Whitelisting is Ownable {
         emit Approved(toApprove);
     }
 
-    function approveInvestorsInBulk(address[] toApprove) public onlyOwner {
+    function approveInvestorsInBulk(address[] calldata toApprove) external onlyOwner {
         for (uint i=0; i<toApprove.length; i++) {
             isInvestorApproved[toApprove[i]] = true;
             emit Approved(toApprove[i]);
@@ -32,7 +32,7 @@ contract Whitelisting is Ownable {
         emit Disapproved(toDisapprove);
     }
 
-    function disapproveInvestorsInBulk(address[] toDisapprove) public onlyOwner {
+    function disapproveInvestorsInBulk(address[] calldata toDisapprove) external onlyOwner {
         for (uint i=0; i<toDisapprove.length; i++) {
             delete isInvestorApproved[toDisapprove[i]];
             emit Disapproved(toDisapprove[i]);
@@ -45,7 +45,7 @@ contract Whitelisting is Ownable {
         emit PaymentApproved(toApprove);
     }
 
-    function approveInvestorsPaymentInBulk(address[] toApprove) public onlyOwner {
+    function approveInvestorsPaymentInBulk(address[] calldata toApprove) external onlyOwner {
         for (uint i=0; i<toApprove.length; i++) {
             isInvestorPaymentApproved[toApprove[i]] = true;
             emit PaymentApproved(toApprove[i]);
@@ -57,7 +57,7 @@ contract Whitelisting is Ownable {
         emit PaymentDisapproved(toDisapprove);
     }
 
-    function disapproveInvestorsPaymentInBulk(address[] toDisapprove) public onlyOwner {
+    function disapproveInvestorsPaymentInBulk(address[] calldata toDisapprove) external onlyOwner {
         for (uint i=0; i<toDisapprove.length; i++) {
             delete isInvestorPaymentApproved[toDisapprove[i]];
             emit PaymentDisapproved(toDisapprove[i]);

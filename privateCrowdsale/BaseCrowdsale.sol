@@ -1,19 +1,20 @@
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
 import "../whitelisting/Whitelisting.sol";
 import "../token/Token.sol";
 import "../../zeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import "../../zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
-contract BaseCrowdsale is Pausable {
+contract BaseCrowdsale is Pausable, Ownable {
     using SafeMath for uint256;
 
     Whitelisting public whitelisting;
     Token public token;
 
     struct Contribution {
-        address contributor;
+        address payable contributor;
         uint256 weiAmount;
         uint256 contributionTime;
         bool tokensAllocated;
@@ -23,7 +24,7 @@ contract BaseCrowdsale is Pausable {
     uint256 public contributionIndex;
     uint256 public startTime;
     uint256 public endTime;
-    address public wallet;
+    address payable public wallet;
     uint256 public weiRaised;
     uint256 public tokenRaised;
 
@@ -59,14 +60,14 @@ contract BaseCrowdsale is Pausable {
     constructor(
         uint256 _startTime,
         uint256 _endTime,
-        address _wallet,
+        address payable _wallet,
         Token _token,
         Whitelisting _whitelisting
     )
         public
         checkZeroAddress(_wallet)
-        checkZeroAddress(_token)
-        checkZeroAddress(_whitelisting)
+        checkZeroAddress(address(_token))
+        checkZeroAddress(address(_whitelisting))
     {
         require(_startTime >= now);
         require(_endTime >= _startTime);
@@ -87,7 +88,7 @@ contract BaseCrowdsale is Pausable {
         onlyOwner
         checkZeroAddress(newOwner)
     {
-        emit TokenOwnershipTransferred(owner, newOwner);
+        emit TokenOwnershipTransferred(owner(), newOwner);
         token.transferOwnership(newOwner);
     }
 
@@ -117,7 +118,7 @@ contract BaseCrowdsale is Pausable {
         return now > endTime;
     }
 
-    function buyTokens(address beneficiary)
+    function buyTokens(address payable beneficiary)
         internal
         whenNotPaused
         checkZeroAddress(beneficiary)

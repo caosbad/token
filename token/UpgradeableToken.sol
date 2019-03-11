@@ -1,4 +1,4 @@
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * A token upgrade mechanism where users can opt-in amount of tokens to the next smart contract revision.
@@ -69,9 +69,9 @@ contract UpgradeableToken is MintableAndPausableToken {
         require(tokenUpgrader.isTokenUpgrader());
 
         // Make sure that token supplies match in source and target
-        require(tokenUpgrader.originalSupply() == totalSupply_);
+        require(tokenUpgrader.originalSupply() == totalSupply());
 
-        emit TokenUpgraderIsSet(tokenUpgrader);
+        emit TokenUpgraderIsSet(address(tokenUpgrader));
     }
 
     // Allow the token holder to upgrade some of their tokens to a new contract.
@@ -83,15 +83,17 @@ contract UpgradeableToken is MintableAndPausableToken {
         // Validate input value
         require(_value != 0);
 
-        balances[msg.sender] = balances[msg.sender].sub(_value);
-
+        //balances[msg.sender] = balances[msg.sender].sub(_value);
         // Take tokens out from circulation
-        totalSupply_ = totalSupply_.sub(_value);
+        //totalSupply_ = totalSupply_.sub(_value);
+        //the _burn method emits the Transfer event
+        _burn(msg.sender, _value);
+
         totalUpgraded = totalUpgraded.add(_value);
 
         // Token Upgrader reissues the tokens
         tokenUpgrader.upgradeFrom(msg.sender, _value);
-        emit Upgrade(msg.sender, tokenUpgrader, _value);
+        emit Upgrade(msg.sender, address(tokenUpgrader), _value);
     }
 
     /**

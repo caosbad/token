@@ -1,11 +1,11 @@
 //modified as per Lition's requirement
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
 import "./UpgradeableToken.sol";
-import "../../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "../whitelisting/Whitelisting.sol"
+import "../../zeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol";
 
-contract Token is UpgradeableToken, BurnableToken {
+
+contract Token is UpgradeableToken, ERC20Burnable {
     string public name;
     string public symbol;
 
@@ -27,7 +27,6 @@ contract Token is UpgradeableToken, BurnableToken {
     mapping( address => Bonus ) hodlPremium;
 
     mapping( address => uint256 ) public buybackRegistry;
-    Whitelisting whitelisting;
     ERC20 stablecoin;
     address stablecoinPayer;
 
@@ -45,38 +44,36 @@ contract Token is UpgradeableToken, BurnableToken {
     constructor (address _litWallet, address _upgradeMaster, uint256 _INITIAL_SUPPLY, uint256 _hodlPremiumCap)
         public
         UpgradeableToken(_upgradeMaster)
+        Ownable()
     {
         require(maxTokenSupply >= _INITIAL_SUPPLY * (10 ** uint256(decimals)));
         INITIAL_SUPPLY = _INITIAL_SUPPLY * (10 ** uint256(decimals));
-        totalSupply_ = INITIAL_SUPPLY;
         setHodlPremiumCap(_hodlPremiumCap);
-        balances[_litWallet] = INITIAL_SUPPLY;
-        emit Transfer(address(0), _litWallet, INITIAL_SUPPLY);
+        _mint(_litWallet, INITIAL_SUPPLY);
     }
 
     /**
     * Owner can update token information here
     */
-    function setTokenInformation(string _name, string _symbol) external onlyOwner {
+    function setTokenInformation(string calldata _name, string calldata _symbol) external onlyOwner {
         name = _name;
         symbol = _symbol;
 
         emit UpdatedTokenInformation(name, symbol);
     }
 
-    function setRefundSignupDetails( uint256 _datetime, address _whitelisting, address _stablecoin, address _payer ) public onlyOwner {
-        whitelisting = _whitelisting;
+    function setRefundSignupDetails( uint256 _startTime,  uint256 _endTime, ERC20 _stablecoin, address _payer ) public onlyOwner {
         stablecoin = _stablecoin;
         stablecoinPayer = _payer;
-        signupWindowStart = _datetime;
-        signupWindowEnd = signupWindowStart + 7 days;
+        signupWindowStart = _startTime;
+        signupWindowEnd = _endTime;
         refundWindowStart = signupWindowStart + 182 days;
         refundWindowEnd = signupWindowEnd + 182 days;
     }
 
     function signUpForRefund( uint256 _value ) public {
-        assert( whitelisting.isInvestorApproved(msg.sender) );
-        assert( block.timestamp >= signupWindowStart )
+        //assert( whitelisting.isInvestorApproved(msg.sender) );
+        assert( block.timestamp >= signupWindowStart );
         assert( block.timestamp <= signupWindowEnd );
         buybackRegistry[msg.sender] = _value;
         emit RegisteredForRefund(msg.sender, _value); 
@@ -127,25 +124,30 @@ contract Token is UpgradeableToken, BurnableToken {
 
     function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
         require(_to != address(0));
-        require(_value <= balances[msg.sender]);
+        require(_value <= balanceOf(msg.sender));
 
         if (hodlPremiumMinted < hodlPremiumCap && hodlPremium[msg.sender].tokens > 0) {
             uint256 amountForBonusCalculation = calculateAmountForBonus(msg.sender, _value);
             uint256 bonus = calculateBonus(msg.sender, amountForBonusCalculation);
 
             if ( bonus > 0) {
-                balances[msg.sender] = balances[msg.sender].add(bonus);
+                //balances[msg.sender] = balances[msg.sender].add(bonus);
                 hodlPremium[msg.sender].tokens = hodlPremium[msg.sender].tokens.sub(amountForBonusCalculation);
-                emit Transfer(address(0), msg.sender, bonus);
+                _mint( msg.sender, bonus );
+                //emit Transfer(address(0), msg.sender, bonus);
             }
         }
 
-        balances[msg.sender] = balances[msg.sender].sub(_value);
+
+
+        _transfer( msg.sender, _to, _value );
+//        balances[msg.sender] = balances[msg.sender].sub(_value);
+//        balances[_to] = balances[_to].add(_value);
+//        emit Transfer(msg.sender, _to, _value);
+
         //TODO: optimize to avoid setting values outside of buyback window
-        if( balances[msg.sender] < buybackRegistry[msg.sender] )
-            buybackRegistry[msg.sender] = balances[msg.sender];
-        balances[_to] = balances[_to].add(_value);
-        emit Transfer(msg.sender, _to, _value);
+        if( balanceOf(msg.sender) < buybackRegistry[msg.sender] )
+            buybackRegistry[msg.sender] = balanceOf(msg.sender);
         return true;
     }
 
@@ -159,23 +161,24 @@ contract Token is UpgradeableToken, BurnableToken {
         returns (bool)
     {
         require(_to != address(0));
-        require(_value <= allowed[_from][msg.sender]);
-        require(_value <= balances[_from]);
+        //require(_value <= allowed[_from][msg.sender]);
+        //require(_value <= balances[_from]);
 
         if (hodlPremiumMinted < hodlPremiumCap && hodlPremium[_from].tokens > 0) {
             uint256 bonus = calculateBonus(_from, _value);
             uint256 amountForBonusCalculation = calculateAmountForBonus(_from, _value);
 
             if ( bonus > 0) {
-                balances[_from] = balances[_from].add(bonus);
+                //balances[_from] = balances[_from].add(bonus);
                 hodlPremium[_from].tokens = hodlPremium[_from].tokens.sub(amountForBonusCalculation);
-                emit Transfer(address(0), _from, bonus);
+                _mint( msg.sender, bonus );
+                //emit Transfer(address(0), _from, bonus);
             }
         }
-        balances[_from] = balances[_from].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        emit Transfer(_from, _to, _value);
+
+        super.transferFrom( _from, _to, _value);
+        if( balanceOf(msg.sender) < buybackRegistry[msg.sender] )
+            buybackRegistry[msg.sender] = balanceOf(msg.sender);
         return true;
     }
 

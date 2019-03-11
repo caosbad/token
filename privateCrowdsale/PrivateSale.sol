@@ -1,9 +1,9 @@
 //modified according to Lition's requirement
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
+import "../vesting/Vesting.sol";
 import "./TokenCapCrowdsale.sol";
 import "./TokenCapRefund.sol";
-import "../vesting/Vesting.sol";
 
 
 contract PrivateSale is TokenCapCrowdsale, TokenCapRefund {
@@ -14,7 +14,7 @@ contract PrivateSale is TokenCapCrowdsale, TokenCapRefund {
     constructor (
         uint256 _startTime,
         uint256 _endTime,
-        address _wallet,
+        address payable _wallet,
         Whitelisting _whitelisting,
         Token _token,
         Vesting _vesting,
@@ -28,7 +28,7 @@ contract PrivateSale is TokenCapCrowdsale, TokenCapRefund {
         TokenCapRefund(_refundClosingTime)
         BaseCrowdsale(_startTime, _endTime, _wallet, _token, _whitelisting)
     {
-        require(_vesting != address(0), "Invalid address");
+        require( address(_vesting) != address(0), "Invalid address");
         vesting = _vesting;
     }
 
@@ -71,7 +71,7 @@ contract PrivateSale is TokenCapCrowdsale, TokenCapRefund {
         tokenRaised = tokenRaised.add(tokens);
 
         token.mint(address(vesting), tokens);
-        Vesting(vesting).initializeVesting(beneficiary, tokens, now, userType);
+        Vesting(vesting).initializeVesting(beneficiary, tokens, now, Vesting.VestingUser(userType));
     }
 
     function ownerAssignedTokens(address beneficiary, uint256 tokens)

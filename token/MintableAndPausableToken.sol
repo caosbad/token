@@ -1,9 +1,10 @@
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
-import "../../zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
+import "../../zeppelin-solidity/contracts/token/ERC20/ERC20Pausable.sol";
+import "../../zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
-contract MintableAndPausableToken is PausableToken {
+contract MintableAndPausableToken is ERC20Pausable, Ownable {
     uint8 public constant decimals = 18;
     uint256 public maxTokenSupply = 183500000 * 10 ** uint256(decimals);
 
@@ -19,7 +20,7 @@ contract MintableAndPausableToken is PausableToken {
     }
 
     modifier checkMaxSupply(uint256 _amount) {
-        require(maxTokenSupply >= totalSupply_.add(_amount));
+        require(maxTokenSupply >= totalSupply().add(_amount));
         _;
     }
 
@@ -36,10 +37,7 @@ contract MintableAndPausableToken is PausableToken {
         whenNotPaused
         returns (bool)
     {
-        totalSupply_ = totalSupply_.add(_amount);
-        balances[_to] = balances[_to].add(_amount);
-        emit Mint(_to, _amount);
-        emit Transfer(address(0), _to, _amount);
+        _mint(_to, _amount);
         return true;
     }
 

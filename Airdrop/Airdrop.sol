@@ -1,4 +1,4 @@
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../zeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../zeppelin-solidity/contracts/ownership/Ownable.sol";
@@ -17,7 +17,7 @@ contract Airdrop is Ownable {
     uint256 public individualCap;
     uint256 public totalAlloctedToken;
     mapping (address => uint256) airdropContribution;
-    event Airdrop(address to, uint256 token);
+    event Airdroped(address to, uint256 token);
 
     constructor (
         IERC20 _tokenAddr,
@@ -29,7 +29,7 @@ contract Airdrop is Ownable {
         individualCap = _individualCap;
     }
 
-    function drop(address[] _recipients, uint256[] _amount) 
+    function drop(address[] calldata _recipients, uint256[] calldata _amount)
         external 
         onlyOwner returns (bool) 
     {
@@ -42,7 +42,7 @@ contract Airdrop is Ownable {
             airdropContribution[_recipients[i]] = airdropContribution[_recipients[i]].add(_amount[i]);
             totalAlloctedToken = totalAlloctedToken.add(_amount[i]);
             token.transfer(_recipients[i], _amount[i]);
-            emit Airdrop(_recipients[i], _amount[i]);
+            emit Airdroped(_recipients[i], _amount[i]);
         }
         return true;
     }

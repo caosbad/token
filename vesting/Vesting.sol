@@ -1,5 +1,5 @@
 //modified according to lition's requirements
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
 import "./CommunityVesting.sol";
 import "./TeamVesting.sol";
@@ -9,10 +9,10 @@ import "../../zeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
-interface Token {
-    function totalSupply() public view returns (uint256);
-    function balanceOf(address _owner) public view returns (uint256 balance);
-    function transfer(address _to, uint256 _value) public returns (bool);
+interface TokenInterface {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address _owner) external view returns (uint256 balance);
+    function transfer(address _to, uint256 _value) external returns (bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
@@ -22,7 +22,7 @@ contract Vesting is Ownable {
 
     enum VestingUser { Public, Seed, Private, Advisor, Team, Community, Ecosystem }
 
-    Token public token;
+    TokenInterface public token;
     CommunityVesting public communityVesting;
     TeamVesting public teamVesting;
     EcosystemVesting public ecosystemVesting;
@@ -32,8 +32,8 @@ contract Vesting is Ownable {
     event TokensReleased(address _to, uint256 _tokensReleased, VestingUser user);
 
     constructor(address _token) public {
-        require(_token != 0x0, "Invalid address");
-        token = Token(_token);
+        //require(_token != 0x0, "Invalid address");
+        token = TokenInterface(_token);
         communityVesting = new CommunityVesting();
         teamVesting = new TeamVesting();
         ecosystemVesting = new EcosystemVesting();

@@ -1,4 +1,4 @@
-pragma solidity 0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../zeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -6,14 +6,14 @@ import "../../zeppelin-solidity/contracts/ownership/Ownable.sol";
 contract RefundVault is Ownable {
     enum State { Active, Refunding, Closed }
 
-    address public wallet;
+    address payable public wallet;
     State public state;
 
     event Closed();
     event RefundsEnabled();
     event Refunded(address indexed beneficiary, uint256 weiAmount);
 
-    constructor(address _wallet) public {
+    constructor(address payable _wallet) public {
         require(_wallet != address(0));
         wallet = _wallet;
         state = State.Active;
@@ -36,7 +36,7 @@ contract RefundVault is Ownable {
         emit RefundsEnabled();
     }
 
-    function refund(address investor, uint256 depositedValue) public onlyOwner {
+    function refund(address payable investor, uint256 depositedValue) public onlyOwner {
         require(state == State.Refunding);
         investor.transfer(depositedValue);
         emit Refunded(investor, depositedValue);
