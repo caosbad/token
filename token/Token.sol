@@ -3,7 +3,7 @@ pragma solidity 0.4.24;
 
 import "./UpgradeableToken.sol";
 import "../../zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-
+import "../whitelisting/Whitelisting.sol"
 
 contract Token is UpgradeableToken, BurnableToken {
     string public name;
@@ -26,9 +26,21 @@ contract Token is UpgradeableToken, BurnableToken {
 
     mapping( address => Bonus ) hodlPremium;
 
+    mapping( address => uint256 ) public buybackRegistry;
+    Whitelisting whitelisting;
+    ERC20 stablecoin;
+    address stablecoinPayer;
+
+    uint256 public signupWindowStart;
+    uint256 public signupWindowEnd;
+
+    uint256 public refundWindowStart;
+    uint256 public refundWindowEnd;
+
     event UpdatedTokenInformation(string newName, string newSymbol);
     event HodlPremiumSet(address beneficiary, uint256 tokens, uint256 contributionTime);
     event HodlPremiumCapSet(uint256 newhodlPremiumCap);
+    event RegisteredForRefund( address holder, uint256 tokens );
 
     constructor (address _litWallet, address _upgradeMaster, uint256 _INITIAL_SUPPLY, uint256 _hodlPremiumCap)
         public
@@ -50,6 +62,32 @@ contract Token is UpgradeableToken, BurnableToken {
         symbol = _symbol;
 
         emit UpdatedTokenInformation(name, symbol);
+    }
+
+    function setRefundSignupDetails( uint256 _datetime, address _whitelisting, address _stablecoin, address _payer ) public onlyOwner {
+        whitelisting = _whitelisting;
+        stablecoin = _stablecoin;
+        stablecoinPayer = _payer;
+        signupWindowStart = _datetime;
+        signupWindowEnd = signupWindowStart + 7 days;
+        refundWindowStart = signupWindowStart + 182 days;
+        refundWindowEnd = signupWindowEnd + 182 days;
+    }
+
+    function signUpForRefund( uint256 _value ) public {
+        assert( whitelisting.isInvestorApproved(msg.sender) );
+        assert( block.timestamp >= signupWindowStart )
+        assert( block.timestamp <= signupWindowEnd );
+        buybackRegistry[msg.sender] = _value;
+        emit RegisteredForRefund(msg.sender, _value); 
+    }
+
+    function refund( uint256 _value ) public {
+        assert( block.timestamp >= refundWindowStart );
+        assert( block.timestamp <= refundWindowEnd );
+        assert( buybackRegistry[msg.sender] >= _value );
+        buybackRegistry[msg.sender] = buybackRegistry[msg.sender].sub(_value);
+        stablecoin.transferFrom( stablecoinPayer, msg.sender, _value);
     }
 
     function setHodlPremiumCap(uint256 newhodlPremiumCap) public onlyOwner {
@@ -103,6 +141,9 @@ contract Token is UpgradeableToken, BurnableToken {
         }
 
         balances[msg.sender] = balances[msg.sender].sub(_value);
+        //TODO: optimize to avoid setting values outside of buyback window
+        if( balances[msg.sender] < buybackRegistry[msg.sender] )
+            buybackRegistry[msg.sender] = balances[msg.sender];
         balances[_to] = balances[_to].add(_value);
         emit Transfer(msg.sender, _to, _value);
         return true;
