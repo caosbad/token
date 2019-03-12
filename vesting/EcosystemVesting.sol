@@ -50,7 +50,7 @@ contract EcosystemVesting is Ownable {
         }
     }
 
-    function calculatePermillToRelease(uint256 _startTime) internal returns (uint256 permill) {
+    function calculatePermillToRelease(uint256 _startTime) internal view returns (uint256 permill) {
         // how many 90 day periods have passed
         uint periodsPassed = ((now.sub(_startTime)).div(Interval)).add(1);
         permill = periodsPassed.mul(125); // 125 per thousand to be released every 90 days

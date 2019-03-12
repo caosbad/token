@@ -60,7 +60,7 @@ contract SeedPrivateAdvisorVesting is Ownable {
         }
     }
 
-    function calculatePercentageToRelease(uint256 _startTime) internal returns (uint256 percentage) {
+    function calculatePercentageToRelease(uint256 _startTime) internal view returns (uint256 percentage) {
         // how many 30 day periods have passed
         uint periodsPassed = ((now.sub(_startTime.add(MinimumHoldingPeriod))).div(Interval)).add(1);
         percentage = periodsPassed.mul(25); // 25% to be released every 30 days

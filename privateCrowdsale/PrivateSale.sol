@@ -28,6 +28,7 @@ contract PrivateSale is TokenCapCrowdsale, TokenCapRefund {
         TokenCapRefund(_refundClosingTime)
         BaseCrowdsale(_startTime, _endTime, _wallet, _token, _whitelisting)
     {
+        _refundClosingTokenCap; //silence compiler warninf
         require( address(_vesting) != address(0), "Invalid address");
         vesting = _vesting;
     }
