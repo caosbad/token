@@ -9,6 +9,7 @@ contract PublicSale is TokenCapCrowdsale, TokenCapRefund {
 
     Vesting public vesting;
     mapping (address => uint256) public tokensVested;
+    uint256 hodlStartTime;
 
     constructor (
         uint256 _startTime,
@@ -88,7 +89,7 @@ contract PublicSale is TokenCapCrowdsale, TokenCapRefund {
         tokenRaised = tokenRaised.add(tokens);
 
         token.mint(beneficiary, tokens);
-        token.sethodlPremium(beneficiary, tokens, now + 7 days);
+        token.sethodlPremium(beneficiary, tokens, hodlStartTime);
 
         emit TokenPurchase(
             msg.sender,
@@ -96,5 +97,9 @@ contract PublicSale is TokenCapCrowdsale, TokenCapRefund {
             0,
             tokens
         );
+    }
+
+    function setHodlStartTime(uint256 _hodlStartTime) onlyOwner external{
+        hodlStartTime = _hodlStartTime;
     }
 }

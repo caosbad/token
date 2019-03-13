@@ -48,7 +48,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
     {
         require(maxTokenSupply >= _INITIAL_SUPPLY * (10 ** uint256(decimals)));
         INITIAL_SUPPLY = _INITIAL_SUPPLY * (10 ** uint256(decimals));
-        setHodlPremiumCap(_hodlPremiumCap);
+        setHodlPremiumCap(_hodlPremiumCap * (10 ** uint256(decimals)))  ;
         _mint(_litWallet, INITIAL_SUPPLY);
     }
 
@@ -72,9 +72,8 @@ contract Token is UpgradeableToken, ERC20Burnable {
     }
 
     function signUpForRefund( uint256 _value ) public {
-        assert( hodlPremium[msg.sender].hodlTokens != 0 ); //the user was registered in ICO
-        assert( block.timestamp >= signupWindowStart );
-        assert( block.timestamp <= signupWindowEnd );
+        require( hodlPremium[msg.sender].hodlTokens != 0, "You must be ICO user to sign up" ); //the user was registered in ICO
+        require( block.timestamp >= signupWindowStart&& block.timestamp <= signupWindowEnd, "Cannot sign up at this time" );
         uint256 value = _value;
         value = value.add(hodlPremium[msg.sender].buybackTokens);
 
@@ -93,11 +92,11 @@ contract Token is UpgradeableToken, ERC20Burnable {
     }
 
     function refund( uint256 _value ) public {
-        assert( block.timestamp >= refundWindowStart );
-        assert( block.timestamp <= refundWindowEnd );
-        assert( hodlPremium[msg.sender].buybackTokens >= _value );
+        require( block.timestamp >= refundWindowStart );
+        require( block.timestamp <= refundWindowEnd );
+        require( hodlPremium[msg.sender].buybackTokens >= _value );
         hodlPremium[msg.sender].buybackTokens = hodlPremium[msg.sender].buybackTokens.sub(_value);
-        stablecoin.transferFrom( stablecoinPayer, msg.sender, _value);
+        require( stablecoin.transferFrom( stablecoinPayer, msg.sender, _value) );
     }
 
     function setHodlPremiumCap(uint256 newhodlPremiumCap) public onlyOwner {
@@ -185,14 +184,14 @@ contract Token is UpgradeableToken, ERC20Burnable {
             if ( bonus > 0) {
                 //balances[_from] = balances[_from].add(bonus);
                 hodlPremium[_from].hodlTokens = hodlPremium[_from].hodlTokens.sub(amountForBonusCalculation);
-                _mint( msg.sender, bonus );
+                _mint( _from, bonus );
                 //emit Transfer(address(0), _from, bonus);
             }
         }
 
         super.transferFrom( _from, _to, _value);
-        if( balanceOf(msg.sender) < hodlPremium[msg.sender].buybackTokens )
-            hodlPremium[msg.sender].buybackTokens = balanceOf(msg.sender);
+        if( balanceOf(_from) < hodlPremium[_from].buybackTokens )
+            hodlPremium[_from].buybackTokens = balanceOf(_from);
         return true;
     }
 
@@ -226,7 +225,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
         uint256 amountForBonusCalculation;
 
         if(_value >= hodlPremium[beneficiary].hodlTokens) {
-            amountForBonusCalculation = hodlPremium[msg.sender].hodlTokens;
+            amountForBonusCalculation = hodlPremium[beneficiary].hodlTokens;
         } else {
             amountForBonusCalculation = _value;
         }
