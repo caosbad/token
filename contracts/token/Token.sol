@@ -95,6 +95,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
         require( block.timestamp >= refundWindowStart );
         require( block.timestamp <= refundWindowEnd );
         require( hodlPremium[msg.sender].buybackTokens >= _value );
+        require( balanceOf(msg.sender) >= _value ); //this check is probably redundant to those in _burn, but better check twice
         hodlPremium[msg.sender].buybackTokens = hodlPremium[msg.sender].buybackTokens.sub(_value);
         _burn( msg.sender, _value );
         require( stablecoin.transferFrom( stablecoinPayer, msg.sender, _value.div(20) ) ); //we pay 1/20 = 0.05 DAI for 1 LIT
