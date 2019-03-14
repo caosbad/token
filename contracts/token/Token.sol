@@ -96,7 +96,8 @@ contract Token is UpgradeableToken, ERC20Burnable {
         require( block.timestamp <= refundWindowEnd );
         require( hodlPremium[msg.sender].buybackTokens >= _value );
         hodlPremium[msg.sender].buybackTokens = hodlPremium[msg.sender].buybackTokens.sub(_value);
-        require( stablecoin.transferFrom( stablecoinPayer, msg.sender, _value) );
+        _burn( msg.sender, _value );
+        require( stablecoin.transferFrom( stablecoinPayer, msg.sender, _value / 2) );
     }
 
     function setHodlPremiumCap(uint256 newhodlPremiumCap) public onlyOwner {

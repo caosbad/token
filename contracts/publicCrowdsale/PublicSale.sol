@@ -50,7 +50,7 @@ contract PublicSale is TokenCapCrowdsale, TokenCapRefund {
         contributions[index].tokensAllocated = true;
         tokenRaised = tokenRaised.add(tokens);
         token.mint(contributor, tokens);
-        token.sethodlPremium(contributor, tokens, now + 7 days);
+        token.sethodlPremium(contributor, tokens, hodlStartTime);
 
         emit TokenPurchase(
             msg.sender,
