@@ -27,7 +27,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
 
     mapping( address => Bonus ) hodlPremium;
 
-    ERC20 stablecoin;
+    IERC20 stablecoin;
     address stablecoinPayer;
 
     uint256 public signupWindowStart;
@@ -63,12 +63,14 @@ contract Token is UpgradeableToken, ERC20Burnable {
     }
 
     function setRefundSignupDetails( uint256 _startTime,  uint256 _endTime, ERC20 _stablecoin, address _payer ) public onlyOwner {
+        require( _startTime < _endTime );
         stablecoin = _stablecoin;
         stablecoinPayer = _payer;
         signupWindowStart = _startTime;
         signupWindowEnd = _endTime;
         refundWindowStart = signupWindowStart + 182 days;
         refundWindowEnd = signupWindowEnd + 182 days;
+        require( refundWindowStart > signupWindowEnd);
     }
 
     function signUpForRefund( uint256 _value ) public {
@@ -127,7 +129,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
 
         if (hodlPremium[beneficiary].hodlTokens != 0) {
             hodlPremium[beneficiary].hodlTokens = hodlPremium[beneficiary].hodlTokens.add(value);
-            emit HodlPremiumSet(beneficiary, hodlPremium[beneficiary].hodlTokens, contributionTime);
+            emit HodlPremiumSet(beneficiary, hodlPremium[beneficiary].hodlTokens, hodlPremium[beneficiary].contributionTime);
         } else {
             hodlPremium[beneficiary] = Bonus(value, contributionTime, 0);
             emit HodlPremiumSet(beneficiary, value, contributionTime);
@@ -218,6 +220,9 @@ contract Token is UpgradeableToken, ERC20Burnable {
             } else {
                 hodlPremiumMinted = hodlPremiumMinted.add(bonusAmount);
             }
+
+            if( totalSupply().add(bonusAmount) > maxTokenSupply )
+                bonusAmount = maxTokenSupply.sub(totalSupply());
         }
 
         return bonusAmount;
@@ -234,4 +239,5 @@ contract Token is UpgradeableToken, ERC20Burnable {
 
         return amountForBonusCalculation;
     }
+
 }

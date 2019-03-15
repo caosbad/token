@@ -15,7 +15,7 @@ contract SeedPrivateAdvisorVesting is Ownable {
     uint256 constant public MaximumHoldingPeriod = 180 days;
 
     uint256 constant public SeedCap = 28000000 ether; // 28 million tokens
-    uint256 constant public PrivateCap = 30000000 ether; // 30 million tokens
+    uint256 constant public PrivateCap = 9000000 ether; // 9 million tokens
     uint256 constant public AdvisorCap = 7400000 ether; // 7.4 million tokens
 
     uint256 public totalSeedTokensCommitted;
@@ -84,10 +84,12 @@ contract SeedPrivateAdvisorVesting is Ownable {
             _user = User.Private;
             totalPrivateTokensCommitted = totalPrivateTokensCommitted.add(_tokens);
             require(totalPrivateTokensCommitted <= PrivateCap);
-        } else {
+        } else if (user == uint8(User.Advisor)) {
             _user = User.Advisor;
             totalAdvisorTokensCommitted = totalAdvisorTokensCommitted.add(_tokens);
             require(totalAdvisorTokensCommitted <= AdvisorCap);
+        } else {
+            revert( "incorrect category, not eligible for vesting" );
         }
 
         if (holdings[_beneficiary].tokensCommitted != 0) {

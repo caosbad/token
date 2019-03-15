@@ -37,8 +37,16 @@ contract MintableAndPausableToken is ERC20Pausable, Ownable {
         whenNotPaused
         returns (bool)
     {
-        _mint(_to, _amount);
+        super._mint(_to, _amount);
         return true;
+    }
+
+    function _mint(address _to, uint256 _amount)
+        internal
+        canMint
+        checkMaxSupply (_amount)
+    {
+        super._mint(_to, _amount);
     }
 
     function finishMinting() external onlyOwner canMint returns (bool) {

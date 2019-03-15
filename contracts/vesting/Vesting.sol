@@ -28,6 +28,7 @@ contract Vesting is Ownable {
     EcosystemVesting public ecosystemVesting;
     SeedPrivateAdvisorVesting public seedPrivateAdvisorVesting;
     mapping (address => VestingUser) public userCategory;
+    uint256 public totalAllocated;
 
     event TokensReleased(address _to, uint256 _tokensReleased, VestingUser user);
 
@@ -51,10 +52,13 @@ contract Vesting is Ownable {
             tokensToClaim = teamVesting.claimTokens(msg.sender);
         } else if (category == 5) {
             tokensToClaim = communityVesting.claimTokens(msg.sender);
-        } else {
+        } else if (category == 6){
             tokensToClaim = ecosystemVesting.claimTokens(msg.sender);
+        } else {
+            revert( "incorrect category, maybe unknown user" );
         }
 
+        totalAllocated.sub(tokensToClaim);
         require(token.transfer(msg.sender, tokensToClaim), "Insufficient balance in vesting contract");
         emit TokensReleased(msg.sender, tokensToClaim, userCategory[msg.sender]);
     }
@@ -71,7 +75,9 @@ contract Vesting is Ownable {
         uint8 category = uint8(user);
         require(category != 0, "Not eligible for vesting");
 
+        require( uint8(userCategory[_beneficiary]) == 0 || userCategory[_beneficiary] == user, "cannot change user category" );
         userCategory[_beneficiary] = user;
+        totalAllocated.add(_tokens);
 
         if (category == 1 || category == 2 || category == 3) {
             seedPrivateAdvisorVesting.initializeVesting(_beneficiary, _tokens, _startTime, category);
@@ -79,8 +85,16 @@ contract Vesting is Ownable {
             teamVesting.initializeVesting(_beneficiary, _tokens, _startTime);
         } else if (category == 5) {
             communityVesting.initializeVesting(_beneficiary, _tokens, _startTime);
-        } else {
+        } else if (category == 6){
             ecosystemVesting.initializeVesting(_beneficiary, _tokens, _startTime);
+        } else {
+            revert( "incorrect category, not eligible for vesting" );
         }
+    }
+
+    function claimUnallocated( address _sendTo) external onlyOwner{
+        uint256 allTokens = token.balanceOf(address(this));
+        uint256 tokensUnallocated = allTokens.sub(totalAllocated);
+        token.transfer(_sendTo, tokensUnallocated);
     }
 }
