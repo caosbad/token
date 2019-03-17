@@ -183,7 +183,6 @@ contract Token is UpgradeableToken, ERC20Burnable {
             hodlPremium[_from].hodlTokens = hodlPremium[_from].hodlTokens.sub(amountForBonusCalculation);
             if ( bonus > 0) {
                 //balances[_from] = balances[_from].add(bonus);
-                hodlPremium[_from].hodlTokens = hodlPremium[_from].hodlTokens.sub(amountForBonusCalculation);
                 _mint( _from, bonus );
                 //emit Transfer(address(0), _from, bonus);
             }
