@@ -54,9 +54,9 @@ contract CommunityVesting is Ownable {
     }
 
     function calculatePercentageToRelease(uint256 _startTime) internal view returns (uint256 percentage) {
-        // how many 180 day periods have passed
+        // how many 90 day periods have passed
         uint periodsPassed = ((now.sub(_startTime)).div(Interval));
-        percentage = periodsPassed.mul(25); // 25% to be released every 180 days
+        percentage = periodsPassed.mul(25); // 25% to be released every 90 days
     }
 
     function initializeVesting(
