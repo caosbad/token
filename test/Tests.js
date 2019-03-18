@@ -1,8 +1,11 @@
 const BigNumber = web3.BigNumber;
 
+var Airdrop = artifacts.require("Airdrop");
+var privateSale = artifacts.require("privateSale");
+var publicSale = artifacts.require("publicSale");
 var Token = artifacts.require("Token");
-var TestToken = artifacts.require("TestToken");
-
+var Vesting = artifacts.require("Vesting");
+var Whitelisting = artifacts.require("Whitelisting");
 
 async function assertRevert(promise) {
     try {
@@ -14,7 +17,51 @@ async function assertRevert(promise) {
     }
 };
 
-contract('TokenTest', function(accounts) {
+const promisify = (inner) =>
+    new Promise((resolve, reject) =>
+        inner((err, res) => {
+            if (err) { reject(err) }
+            resolve(res);
+        })
+    );
+
+const getBalance = (account, at) =>
+    promisify(cb => web3.eth.getBalance(account, at, cb));
+
+
+const increaseTime = function(duration) {
+    const ids = Date.now()
+
+    web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [duration], id: ids}, function(){});
+}
+
+contract('PrivateSale', function(accounts) {
+   it("shall receive ehters in the vault", async function(){
+       let token = await Token.new(accounts[1], accounts[1], 0, "5000000000000000000000000" );
+       let whitelisting = await Whitelisting.new();
+       let vesting = await Vesting.new(token.address);
+       let now = Math.floor(Date.now()/1000);
+       console.log(now);
+       await whitelisting.approveInvestorPayment(accounts[2]);
+       let privsale = await privateSale.new( now + 1000, now+10000, accounts[1], whitelisting.address, token.address, vesting.address, now+11000, "0", "5000000000000000000000000", "26750000000000000000000");
+       increaseTime(2000);
+       console.log(await getBalance(accounts[2]));
+
+       await privsale.send("10000000000000000000", {from: accounts[2], gas: 1000000 }, function(){});
+       console.log(await getBalance(accounts[2]));
+
+       increaseTime(10000);
+
+       console.log(await getBalance(accounts[1]));
+
+       await privsale.closeRefunds();
+
+       console.log(await getBalance(accounts[1]));
+
+   });
+});
+
+/*contract('TokenTest', function(accounts) {
     it("Shall create token contract and transfer 100000000000000000000000 tokens to other user", async function() {
         let token = await Token.new(accounts[1], accounts[1], 0, "5000000000000000000000000" );
         let testtoken = await TestToken.new("5000000000000000000000000",{from: accounts[1]} );
@@ -90,4 +137,4 @@ contract('TokenTest', function(accounts) {
         //   5000 000000 000000 000000
         // 100000 000000 000000 000000
     });
-});
+});*/

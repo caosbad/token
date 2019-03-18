@@ -69,8 +69,8 @@ contract BaseCrowdsale is Pausable, Ownable {
         checkZeroAddress(address(_token))
         checkZeroAddress(address(_whitelisting))
     {
-        require(_startTime >= now);
-        require(_endTime >= _startTime);
+        require(_startTime >= now, "invalid start time");
+        require(_endTime >= _startTime, "invalid end time");
 
         startTime = _startTime;
         endTime = _endTime;
@@ -123,8 +123,8 @@ contract BaseCrowdsale is Pausable, Ownable {
         whenNotPaused
         checkZeroAddress(beneficiary)
     {
-        require(validPurchase());
-        require(whitelisting.isInvestorPaymentApproved(beneficiary));
+        require(validPurchase(), "invalid purchase");
+        require(whitelisting.isInvestorPaymentApproved(beneficiary), "not whitelisted" );
 
         contributions[contributionIndex].contributor = beneficiary;
         contributions[contributionIndex].weiAmount = msg.value;
