@@ -115,7 +115,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
     }
 
     function burnFrom(address _from, uint256 _value) public onlyOwner {
-        super.burn(_value);
+        super.burnFrom(_from, _value);
     }
 
     function sethodlPremium(
