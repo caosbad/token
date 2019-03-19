@@ -101,7 +101,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
         require( stablecoin.transferFrom( stablecoinPayer, msg.sender, _value.div(20) ), "transfer failed" ); //we pay 1/20 = 0.05 DAI for 1 LIT
     }
 
-    function setHodlPremiumCap(uint256 newhodlPremiumCap) public onlyOwner {
+    function setHodlPremiumCap(uint256 newhodlPremiumCap) public onlyOwner whenPaused {
         require(newhodlPremiumCap > 0);
         hodlPremiumCap = newhodlPremiumCap;
         emit HodlPremiumCapSet(hodlPremiumCap);
@@ -111,6 +111,10 @@ contract Token is UpgradeableToken, ERC20Burnable {
     * Owner can burn token here
     */
     function burn(uint256 _value) public onlyOwner {
+        super.burn(_value);
+    }
+
+    function burnFrom(address _from, uint256 _value) public onlyOwner {
         super.burn(_value);
     }
 
@@ -153,7 +157,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
             }
         }
 
-        ERC20Pausable.transfer( _to, _value );
+        require(ERC20Pausable.transfer( _to, _value ));
 //        balances[msg.sender] = balances[msg.sender].sub(_value);
 //        balances[_to] = balances[_to].add(_value);
 //        emit Transfer(msg.sender, _to, _value);
@@ -188,7 +192,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
             }
         }
 
-        ERC20Pausable.transferFrom( _from, _to, _value);
+        require(ERC20Pausable.transferFrom( _from, _to, _value));
         if( balanceOf(_from) < hodlPremium[_from].buybackTokens )
             hodlPremium[_from].buybackTokens = balanceOf(_from);
         return true;
@@ -209,6 +213,8 @@ contract Token is UpgradeableToken, ERC20Burnable {
 
         if (bonusPeriod != 0) {
             bonusAmount = (((bonusPeriod.mul(amount)).div(maxBonusDuration)).mul(25)).div(100);
+            if( totalSupply().add(bonusAmount) > maxTokenSupply )
+                bonusAmount = maxTokenSupply.sub(totalSupply());
             if (hodlPremiumMinted.add(bonusAmount) > hodlPremiumCap) {
                 bonusAmount = hodlPremiumCap.sub(hodlPremiumMinted);
                 hodlPremiumMinted = hodlPremiumCap;
@@ -216,8 +222,7 @@ contract Token is UpgradeableToken, ERC20Burnable {
                 hodlPremiumMinted = hodlPremiumMinted.add(bonusAmount);
             }
 
-            if( totalSupply().add(bonusAmount) > maxTokenSupply )
-                bonusAmount = maxTokenSupply.sub(totalSupply());
+
         }
 
         return bonusAmount;
